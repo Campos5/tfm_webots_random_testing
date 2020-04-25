@@ -1,5 +1,15 @@
+import os
+import json
+
 WORLD_MAX_M = 10
 WORLD_MAX_N = 10
+WORLD_MAX_OBJECTS = 10
 
 TEMPLATES_PATH = ''
 TEST_MAP_PATH = ''
+
+FS_PATH = ''
+
+POSSIBLE_OBJECTS_PATH = os.path.join(FS_PATH, 'webots/objects/objects.json')
+with open(POSSIBLE_OBJECTS_PATH, 'r') as f:
+    POSSIBLE_OBJECTS = json.load(f) 
