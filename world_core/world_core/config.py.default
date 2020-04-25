@@ -5,7 +5,7 @@ WORLD_MAX_M = 10
 WORLD_MAX_N = 10
 WORLD_MAX_OBJECTS = 10
 
-FS_PATH = 'c:/Users/Enrique/Repositorios/Personal/tfm_webots_random_testing'
+FS_PATH = ''
 
 TEMPLATE_PATH = os.path.join(FS_PATH, 'webots/maps/template_map.wbt')
 TEST_MAP_PATH = os.path.join(FS_PATH,'tests/mapt_test.wbt')
