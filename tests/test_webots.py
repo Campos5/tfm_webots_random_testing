@@ -10,8 +10,9 @@ import tempfile
 import time
 
 from io import StringIO
-from hypothesis import given, settings, assume, HealthCheck, target
+from hypothesis import given, settings, assume, HealthCheck, target, Verbosity
 from hypothesis.strategies import integers, floats, lists
+from datetime import timedelta
 from time import sleep
 
 import config_test
@@ -21,6 +22,11 @@ from world_core.random_world import World
 NUM_EXAMPLE = 0
 start_time = None
 num_objects = None
+
+
+def distance_between_two_points(x,y):
+    import math
+    return math.sqrt((x[1] - x [0])**2 + (y[1] - y[0])**2)  
 
 
 @given(
@@ -150,11 +156,15 @@ def adding_one_target_element(x, y, num_object):
     os.remove(map_file)
 
 @given(
-    positions=lists(lists(integers(0, 99), min_size=2, max_size=2), min_size=config_test.NUM_OBJECTS, max_size=config_test.NUM_OBJECTS),
-    objects_to_add=lists(integers(0, config.NUM_OBJECTS - 1), min_size=config_test.NUM_OBJECTS, max_size=config_test.NUM_OBJECTS)
+    objects_to_add=lists(lists(integers(0, 99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS)
 )
-@settings(max_examples=5, suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,))
-def adding_multiples_target_elements(positions, objects_to_add):    
+@settings(
+    deadline=timedelta(milliseconds=10*1000), 
+    max_examples=5, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
+    verbosity=Verbosity.verbose
+)
+def adding_multiples_target_elements(objects_to_add):    
     global NUM_EXAMPLE
     global start_time
     
@@ -163,21 +173,28 @@ def adding_multiples_target_elements(positions, objects_to_add):
 
     world = World(10, 10, config.TEMPLATE_PATH)
     last_x, last_y = 0, 0
-    for i, (x, y) in enumerate(positions):
-        # Trying to maximize distance between two objects
-        target(float(x - last_x))
-        target(float(y - last_y))
+    target(float(len(objects_to_add)), label="length")
+    
+    distances = [0.0]
+    for i, x, y in objects_to_add:
+        if i != 0:
+            distances.append(distance_between_two_points((x, last_x), (y, last_y)))
         
-        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[objects_to_add[i]]
+        last_x, last_y = x, y
+    
+    target(float(sum(distances)), label="sum")
+    
+    for i, x, y in objects_to_add:
+        num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
+        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i % num_possible_objects]
         assume(world.check_space(object_to_add, x, y, 0))
         world.add_element_with_translation(object_to_add, x, y)
-        last_x, last_y = x, y
 
     map_file = config.TEST_MAP_PATH.replace('.wbt', '{}.wbt'.format(NUM_EXAMPLE))
     world.jinja_template.stream(elements=world.objects).dump(map_file)
     NUM_EXAMPLE += 1
 
-    print('Execution time with {} objects:'.format(len(positions)), time.time() - start_time)
+    print('Execution time with {} objects:'.format(len(objects_to_add)), time.time() - start_time)
     start_time = None
 
     command = 'webots {}'.format(map_file)
@@ -197,6 +214,6 @@ def adding_multiples_target_elements(positions, objects_to_add):
     """
     #os.remove(map_file)
 
-
 if __name__ == "__main__":
+
     adding_multiples_target_elements()
