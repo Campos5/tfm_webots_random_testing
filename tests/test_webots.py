@@ -6,10 +6,8 @@ import json
 import random
 import os
 import subprocess
-import tempfile
 import time
 
-from io import StringIO
 from hypothesis import given, settings, assume, HealthCheck, target, Verbosity
 from hypothesis.strategies import integers, floats, lists
 from datetime import timedelta
@@ -24,136 +22,10 @@ start_time = None
 num_objects = None
 
 
-def distance_between_two_points(x,y):
+def distance_between_two_points(x, y):
     import math
-    return math.sqrt((x[1] - x [0])**2 + (y[1] - y[0])**2)  
+    return math.sqrt((x[1] - x[0])**2 + (y[1] - y[0])**2)  
 
-
-@given(
-    x=floats(0.0, 1.0), 
-    y=floats(0.0, 1.0), 
-    #n=integers(1, 10), 
-    #m=integers(1, 10), 
-    num_object=integers(0, config.NUM_OBJECTS)
-)
-@settings(max_examples=5)#, suppress_health_check=(HealthCheck.too_slow,))
-def adding_one_element(x, y, num_object):
-    
-    x = int(x * 10)
-    y = int(y * 10)
-    
-    print(x,y)
-    
-    """
-    Test using random parameters.
-    In this case 
-    """
-    object_to_add = list(config.POSSIBLE_OBJECTS.keys())[num_object]
-    print(object_to_add)
-    world = World(10, 10, config.TEMPLATE_PATH)
-    print(world.room)
-    assume(world.check_space(object_to_add, x, y, 0))
-
-    # Necessary because template range map is from -5 to 5
-    # And world.room is from 0 to 10
-    x = x - 5
-    y = y - 5
-    
-    print('object added in', x, y)
-    world.add_element_with_translation(object_to_add, x, y)
-    world.jinja_template.stream(elements=world.objects).dump(config.TEST_MAP_PATH)
-
-    command = 'webots {}'.format(config.TEST_MAP_PATH)
-    webots_process = subprocess.Popen(
-        command.split(), 
-        stdout=subprocess.PIPE, 
-        shell=True
-    )
-
-    TIMEOUT = 20    
-    while TIMEOUT > 0:
-        stdout = webots_process.communicate()[0]
-        print(stdout)
-        TIMEOUT -= 1
-        time.sleep(1)
-
-    print('TIMEOUT')
-    webots_process.terminate()
-    webots_process.wait()
-
-
-@given(
-    positions=lists(lists(integers(0, 9), min_size=2, max_size=2), min_size=1, max_size=config.WORLD_MAX_OBJECTS),
-    objects_to_add=lists(integers(0, config.NUM_OBJECTS - 1), min_size=1, max_size=config.WORLD_MAX_OBJECTS)
-)
-@settings(max_examples=5, suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,))
-def adding_multiples_elements(positions, objects_to_add):
-    assume(len(positions) == len(objects_to_add))
-
-    world = World(10, 10, config.TEMPLATE_PATH)
-    for i, (x, y) in enumerate(positions):
-        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[objects_to_add[i]]
-        assume(world.check_space(object_to_add, x, y, 0))
-        # Necessary because template range map is from -5 to 5
-        # And world.room is from 0 to 10
-        x = x - 5
-        y = y - 5
-        world.add_element_with_translation(object_to_add, x, y)
-
-    #world.jinja_template.stream(elements=world.objects).dump(config.TEST_MAP_PATH)
-    """
-    command = 'webots - {}'.format(config.TEST_MAP_PATH)
-    webots_process = subprocess.Popen(
-        command.split(), 
-        stdout=subprocess.PIPE,
-        stdin=StringIO(world.jinja_template.render(elements=world.objects)).getvalue().encode(),
-        shell=True
-    )"""
-
-    from subprocess import run, PIPE
-
-    p = run(
-        ['webots'], 
-        stdout=PIPE,
-        input=world.jinja_template.render(elements=world.objects), 
-        encoding='ascii',
-        shell=True
-    )
-
-
-@given(
-    x=integers(0, 10), 
-    y=integers(0, 10),
-    num_object=integers(0, config.NUM_OBJECTS)
-)
-@settings(max_examples=5)#, suppress_health_check=(HealthCheck.too_slow,))
-def adding_one_target_element(x, y, num_object):
-    global NUM_EXAMPLE
-    
-    target(1.0)    
-    object_to_add = list(config.POSSIBLE_OBJECTS.keys())[num_object]
-    world = World(10, 10, config.TEMPLATE_PATH)
-    assume(world.check_space(object_to_add, x, y, 0))
-    world.add_element_with_translation(object_to_add, x, y)
-    
-    map_file = config.TEST_MAP_PATH.replace('.wbt', '{}.wbt'.format(NUM_EXAMPLE))
-    world.jinja_template.stream(elements=world.objects).dump(map_file)
-    NUM_EXAMPLE += 1
-    
-    
-    command = 'webots {}'.format(map_file)
-    webots_process = subprocess.Popen(
-        command.split(), 
-        stdout=subprocess.PIPE, 
-        shell=True
-    )
-
-    TIMEOUT = 20
-    sleep(TIMEOUT)
-    
-    webots_process.terminate()
-    webots_process.wait()
-    os.remove(map_file)
 
 @given(
     objects_to_add=lists(lists(integers(0, 99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS)
@@ -164,7 +36,7 @@ def adding_one_target_element(x, y, num_object):
     suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
     verbosity=Verbosity.verbose
 )
-def adding_multiples_target_elements(objects_to_add):    
+def adding_multiples_elements(objects_to_add):    
     global NUM_EXAMPLE
     global start_time
     
@@ -172,18 +44,7 @@ def adding_multiples_target_elements(objects_to_add):
         start_time = time.time()
 
     world = World(10, 10, config.TEMPLATE_PATH)
-    last_x, last_y = 0, 0
-    target(float(len(objects_to_add)), label="length")
-    
-    distances = [0.0]
-    for i, x, y in objects_to_add:
-        if i != 0:
-            distances.append(distance_between_two_points((x, last_x), (y, last_y)))
-        
-        last_x, last_y = x, y
-    
-    target(float(sum(distances)), label="sum")
-    
+
     for i, x, y in objects_to_add:
         num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
         object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i % num_possible_objects]
@@ -206,14 +67,207 @@ def adding_multiples_target_elements(objects_to_add):
 
     # De momento se ejecuta webots eternamente. Se detiene cerrando la ventana de webots.
     """
-    TIMEOUT = 300
-    sleep(TIMEOUT)
+    webots_process.terminate()
+    webots_process.wait()
+    """
+    #os.remove(map_file)
+
+
+
+@given(
+    objects_to_add=lists(lists(integers(0, 99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS)
+)
+@settings(
+    deadline=timedelta(milliseconds=10*1000), 
+    max_examples=5, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
+    verbosity=Verbosity.verbose
+)
+def adding_multiples_elements_target_1(objects_to_add):    
+    global NUM_EXAMPLE
+    global start_time
+    
+    if not start_time:
+        start_time = time.time()
+
+    world = World(10, 10, config.TEMPLATE_PATH)
+    #Target maximizing the number of objects to add 
+    target(float(len(objects_to_add)), label="length")
+    
+    
+    # Target maximizing distance between one point and the previous one
+    distances = [0.0]
+    last_x, last_y = 0, 0
+    for i, x, y in objects_to_add:
+        if i != 0:
+            distances.append(distance_between_two_points((x, y), (last_x, last_y)))
+        
+        last_x, last_y = x, y
+    
+    target(float(sum(distances)), label="sum")
+
+    for i, x, y in objects_to_add:
+        num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
+        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i % num_possible_objects]
+        assume(world.check_space(object_to_add, x, y, 0))
+        world.add_element_with_translation(object_to_add, x, y)
+
+    map_file = config.TEST_MAP_PATH.replace('.wbt', '{}.wbt'.format(NUM_EXAMPLE))
+    world.jinja_template.stream(elements=world.objects).dump(map_file)
+    NUM_EXAMPLE += 1
+
+    print('Execution time with {} objects:'.format(len(objects_to_add)), time.time() - start_time)
+    start_time = None
+
+    command = 'webots {}'.format(map_file)
+    webots_process = subprocess.Popen(
+        command.split(), 
+        stdout=subprocess.PIPE, 
+        shell=True
+    )
+
+    # De momento se ejecuta webots eternamente. Se detiene cerrando la ventana de webots.
+    """
     
     webots_process.terminate()
     webots_process.wait()
     """
     #os.remove(map_file)
 
-if __name__ == "__main__":
 
-    adding_multiples_target_elements()
+
+@given(
+    objects_to_add=lists(lists(integers(0, 99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS)
+)
+@settings(
+    deadline=timedelta(milliseconds=10*1000), 
+    max_examples=1, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
+    verbosity=Verbosity.verbose
+)
+def adding_multiples_elements_target_2(objects_to_add):    
+    global NUM_EXAMPLE
+    global start_time
+    
+    if not start_time:
+        start_time = time.time()
+
+    world = World(10, 10, config.TEMPLATE_PATH)
+    
+    #Target maximizing the number of objects to add 
+    target(float(len(objects_to_add)), label="length")
+    
+    # Target maximizing distance between all point
+    total_distance = 0.0
+    for i, x1, y1 in objects_to_add:
+        for j, x2, y2 in objects_to_add:
+                total_distance +=distance_between_two_points((x1, y1), (x2, y2))
+                
+    target(float(total_distance), label="total_distance")
+
+    for i, x, y in objects_to_add:
+        num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
+        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i % num_possible_objects]
+        assume(world.check_space(object_to_add, x, y, 0))
+        world.add_element_with_translation(object_to_add, x, y)
+
+    map_file = config.TEST_MAP_PATH.replace('.wbt', '{}.wbt'.format(NUM_EXAMPLE))
+    world.jinja_template.stream(elements=world.objects).dump(map_file)
+    NUM_EXAMPLE += 1
+
+    print('Execution time with {} objects:'.format(len(objects_to_add)), time.time() - start_time)
+    start_time = None
+
+    command = 'webots --mode=fast --stdout --stderr {}'.format(map_file)
+    webots_process = subprocess.Popen(
+        command.split(), 
+        stdout=subprocess.PIPE, 
+        shell=True
+    )
+
+    execution_time = time.time()
+    output = ''
+    result = False
+    while True:
+        output = webots_process.stdout.readline().decode().strip()
+        if output == '' and webots_process.poll() is not None: #or execution_time > config_test.TIMEOUT:
+            break
+        if output and output == 'Clean completed' or 'Terminating' in output:
+            result = True
+            break
+        elif output:
+            print(output)
+        rc = webots_process.poll()
+    
+    print('La cosa esta ha terminado')
+    assert result
+    # De momento se ejecuta webots eternamente. Se detiene cerrando la ventana de webots.
+    """
+    webots_process.terminate()
+    webots_process.wait()
+    """
+    #os.remove(map_file)
+
+
+
+
+@given(
+    objects_to_add=lists(lists(floats(0, 0.99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS),
+    N=integers(8, 20),
+    M=integers(8, 20)
+)
+@settings(
+    deadline=timedelta(milliseconds=10*1000), 
+    max_examples=1, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
+    #verbosity=Verbosity.verbose
+)
+def random_size(objects_to_add, N, M):    
+    global NUM_EXAMPLE
+    global start_time
+    assume(len(objects_to_add) * 3 <  N * M)
+    print(N, M)
+    
+    if not start_time:
+        start_time = time.time()
+
+    world = World(N, M, config.TEMPLATE_PATH)
+
+    print('Objects')
+    for i, x, y in objects_to_add:
+        num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
+        i = int(i * num_possible_objects)
+        x = int(x * N * 10)
+        y = int(y * M * 10)
+
+        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i]
+        
+        print(x, y)
+        assume(world.check_space(object_to_add, x, y, 0))
+        world.add_element_with_translation(object_to_add, x, y)
+
+    map_file = config.TEST_MAP_PATH.replace('.wbt', '{}.wbt'.format(NUM_EXAMPLE))
+    world.jinja_template.stream(elements=world.objects, N=N, M=M).dump(map_file)
+    NUM_EXAMPLE += 1
+
+    print('Execution time with {} objects:'.format(len(objects_to_add)), time.time() - start_time)
+    start_time = None
+
+    command = 'webots {}'.format(map_file)
+    webots_process = subprocess.Popen(
+        command.split(), 
+        stdout=subprocess.PIPE, 
+        shell=True
+    )
+
+    # De momento se ejecuta webots eternamente. Se detiene cerrando la ventana de webots.
+    """
+    webots_process.terminate()
+    webots_process.wait()
+    """
+    #os.remove(map_file)
+
+
+if __name__ == "__main__":
+    #adding_multiples_elements_target_1()
+    random_size()

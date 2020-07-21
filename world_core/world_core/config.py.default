@@ -1,10 +1,6 @@
 import os
 import json
 
-WORLD_MAX_M = 10
-WORLD_MAX_N = 10
-WORLD_MAX_OBJECTS = 10
-
 FS_PATH = ''
 
 TEMPLATE_PATH = os.path.join(FS_PATH, 'webots/maps/template_map.wbt')

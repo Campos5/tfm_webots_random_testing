@@ -26,30 +26,26 @@ CeilingLight {
   name "ceiling light(2)"
   pointLightIntensity 6
 }
-FloorLight {
-  translation 4.2693419342918375 0 4.528276895458201
-  pointLightIntensity 2
+Wall {
+  translation 0 0 -{{ M / 2 }}
+  size {{ N }} 2.4 0.3
 }
 Wall {
-  translation 0 0 -5
-  size 10.3 2.4 0.3
-}
-Wall {
-  translation -5 0 0
+  translation -{{ N / 2 }} 0 0
   rotation 0 1 0 1.5708
   name "wall(2)"
-  size 9.7 2.4 0.3
+  size {{ M }} 2.4 0.3
 }
 Wall {
-  translation 0 0 5
+  translation 0 0 {{ M / 2 }}
   name "wall(3)"
-  size 10.3 2.4 0.3
+  size {{ N }} 2.4 0.3
 }
 Wall {
-  translation 5 0 0
+  translation {{ N / 2 }} 0 0
   rotation 0 1 0 1.5708
   name "wall(4)"
-  size 9.7 2.4 0.3
+  size {{ M }} 2.4 0.3
 }
 
 {% for e in elements %} 
@@ -68,18 +64,18 @@ DEF IROBOT_CREATE Create {
 Robot {
   children [
     Transform {
-      translation -4.95 0 -4.95
+      translation -{{ N / 2 }} 0 -{{ M / 2 }}
       children [
         Shape {
           appearance Parquetry {
             textureTransform TextureTransform {
-              scale 7 7
+              scale 1 1
             }
           }
           geometry ElevationGrid {
-            xDimension 7
+            xDimension {{ N }}
             xSpacing 1.65
-            zDimension 7
+            zDimension {{ M }}
             zSpacing 1.65
           }
         }
@@ -92,7 +88,7 @@ Robot {
           appearance PBRAppearance {
             baseColorMap ImageTexture {
               url [
-                "C:/Users/Enrique/Repositorios/Personal/random_map_generation/webots/textures/dirty.jpg"
+                "textures/dirty.jpg"
               ]
             }
             transparency 0.9
@@ -100,7 +96,7 @@ Robot {
             metalness 0
           }
           geometry Plane {
-            size 9.9 9.9
+            size {{ N }} {{ M }}
           }
         }
       ]
@@ -110,7 +106,7 @@ Robot {
     }
   ]
   boundingObject Plane {
-    size 9.9 9.9
+    size {{ N }} {{ M }}
   }
   locked TRUE
   controller "ground"
