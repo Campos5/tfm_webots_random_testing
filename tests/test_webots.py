@@ -9,7 +9,10 @@ import subprocess
 import time
 
 from hypothesis import given, settings, assume, HealthCheck, target, Verbosity
-from hypothesis.strategies import integers, floats, lists
+from hypothesis.strategies import integers, floats, lists, composite
+
+#from hamcrest import *
+
 from datetime import timedelta
 from time import sleep
 
@@ -25,6 +28,12 @@ num_objects = None
 def distance_between_two_points(x, y):
     import math
     return math.sqrt((x[1] - x[0])**2 + (y[1] - y[0])**2)  
+
+
+def get_num_of_sections(num_objects):
+    import math
+    x = math.sqrt(num_objects)
+    return math.ceil(x)
 
 
 @given(
@@ -222,7 +231,7 @@ def adding_multiples_elements_target_2(objects_to_add):
     suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
     #verbosity=Verbosity.verbose
 )
-def random_size(objects_to_add, N, M):    
+def random_size(objects_to_add, N, M):
     global NUM_EXAMPLE
     global start_time
     assume(len(objects_to_add) * 3 <  N * M)
@@ -268,6 +277,98 @@ def random_size(objects_to_add, N, M):
     #os.remove(map_file)
 
 
+
+@composite
+def strategy_test_draw_iterative(draw, len_xs=0):
+    xs = []
+    if not len_xs:
+        len_xs = draw(integers(config_test.MIN_NUM_OBJECTS, config_test.MAX_NUM_OBJECTS))
+
+    N = draw(integers(8, 20))
+    M = draw(integers(8, 20))
+    
+    num_of_sections = get_num_of_sections(len_xs)
+
+    init = 0 #- (N / 2)
+    sections_x = []
+    for i in range(num_of_sections):
+        sections_x.append((init + (i * N /num_of_sections), init + ((i+1) * N / num_of_sections)))
+
+
+    init = 0 #- (M / 2)
+    sections_y = []
+    for i in range(num_of_sections):
+        sections_y.append((init + (i * M /num_of_sections), init + ((i+1) * M / num_of_sections)))
+    
+    map_sections = []
+    for x in sections_x:
+        for y in sections_y:
+            map_sections.append((x, y))
+
+
+    x = 0
+    y = 0
+    for _ in range(len_xs):
+        section_to_add = draw(integers(min_value=0, max_value=len(map_sections)-1))
+
+        add_x, add_y = map_sections.pop(section_to_add)
+
+        x = draw(floats(min_value=add_x[0], max_value=add_x[1]))
+        y = draw(floats(min_value=add_y[0], max_value=add_y[1]))
+        i = draw(integers(min_value=0, max_value=99))
+        xs.append((i, x, y))
+        
+    return (xs, N, M)
+
+
+@settings(
+    deadline=timedelta(milliseconds=10*1000), 
+    max_examples=1, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
+    #verbosity=Verbosity.verbose
+)
+@given(input_data=strategy_test_draw_iterative())
+def test_composite_iterative(input_data):
+    global NUM_EXAMPLE
+    global start_time
+
+    objects_to_add, N, M = input_data
+    
+    
+    assume(len(objects_to_add) * 3 <  N * M)
+    if not start_time:
+        start_time = time.time()
+
+    world = World(N, M, config.TEMPLATE_PATH)
+
+    for i, x, y in objects_to_add:
+        num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
+        i = int(i % num_possible_objects)
+        x = int(y * 10) #int(x + N / 2) * 10
+        y = int(y * 10) #int(y + M / 2) * 10
+
+        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i]
+
+        assume(world.check_space(object_to_add, x, y, 0))
+        world.add_element_with_translation(object_to_add, x, y)
+
+    map_file = config.TEST_MAP_PATH.replace('.wbt', '{}.wbt'.format(NUM_EXAMPLE))
+    world.jinja_template.stream(elements=world.objects, N=N, M=M).dump(map_file)
+    NUM_EXAMPLE += 1
+
+    print('Execution time with {} objects:'.format(len(objects_to_add)), time.time() - start_time)
+    start_time = None
+
+    command = 'webots {}'.format(map_file)
+    webots_process = subprocess.Popen(
+        command.split(), 
+        stdout=subprocess.PIPE, 
+        shell=True
+    )
+
+
+
 if __name__ == "__main__":
     #adding_multiples_elements_target_1()
-    random_size()
+    #random_size()
+    test_composite_iterative()

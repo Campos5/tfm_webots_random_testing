@@ -58,7 +58,7 @@ Wall {
 
 
 DEF IROBOT_CREATE Create {
-  translation -0.0193578 0.0899546 3.69248
+  translation 0 0 0
   rotation -5.2210090015212816e-09 0.6964978668000195 0.7175588627722623 0
 }
 Robot {

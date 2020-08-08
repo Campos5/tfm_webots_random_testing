@@ -39,6 +39,9 @@ class World:
         for i in range(len(self.room)):
             self.room[i][0] = 1
             self.room[i][-1] = 1
+            
+        # Set as 1 where the robot starts.
+        self.room[self.n_big/2][self.m_big/2] = 1
 
 
     def mark_ocuped_space(self, object_to_add, x, y):
