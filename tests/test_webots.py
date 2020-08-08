@@ -279,7 +279,10 @@ def random_size(objects_to_add, N, M):
 
 
 @composite
-def strategy_test_draw_iterative(draw, len_xs=0):
+def strategy_grid_room(draw, len_xs=0):
+    """
+    It generates a grid and adds an object into different places. 
+    """
     xs = []
     if not len_xs:
         len_xs = draw(integers(config_test.MIN_NUM_OBJECTS, config_test.MAX_NUM_OBJECTS))
@@ -327,8 +330,11 @@ def strategy_test_draw_iterative(draw, len_xs=0):
     suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,),
     #verbosity=Verbosity.verbose
 )
-@given(input_data=strategy_test_draw_iterative())
+@given(input_data=strategy_grid_room())
 def test_composite_iterative(input_data):
+    """
+    Test that take more efficient parameters. It calls to strategy_grid_room() to take the input data
+    """
     global NUM_EXAMPLE
     global start_time
 
@@ -365,7 +371,6 @@ def test_composite_iterative(input_data):
         stdout=subprocess.PIPE, 
         shell=True
     )
-
 
 
 if __name__ == "__main__":

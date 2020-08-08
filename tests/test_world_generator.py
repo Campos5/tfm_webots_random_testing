@@ -27,8 +27,9 @@ def distance_between_two_points(x, y):
     return math.sqrt((x[1] - x[0])**2 + (y[1] - y[0])**2)  
 
 
-##########    TEST TO MAP GENERATOR       ############
+##########       TEST TO MAP GENERATOR       ############
 
+# Test with 10x10 room and different number of objects. Normal generation.
 
 @given(
     objects_to_add=lists(lists(integers(0, 99), min_size=3, max_size=3), min_size=5, max_size=5)
@@ -90,7 +91,6 @@ def test_normal_map_generator_with_7(objects_to_add):
 
     
     assert True
-
 
 
 @given(
@@ -188,14 +188,7 @@ def test_normal_map_generator_with_15(objects_to_add):
 
 
 
-
-
-
-
-
-
-
-
+# Test with 10x10 room and different number of objects. Using target function.
 
 @given(
     objects_to_add=lists(lists(integers(0, 99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS)
@@ -236,12 +229,6 @@ def adding_multiples_elements_target_1(objects_to_add):
     assert True
 
 
-
-
-
-
-
-
 @given(
     objects_to_add=lists(lists(integers(0, 99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS)
 )
@@ -274,6 +261,20 @@ def adding_multiples_elements_target_2(objects_to_add):
         world.add_element_with_translation(object_to_add, x, y)
 
     assert True
+    
+    
+
+# Test with 10x10 room and different number of objects. Using compose function (grid room).
+    
+
+
+# Test with X objects and different room size. Using different functions.
+
+
+
+# All random parameters and different functions.
+
+
     
 if __name__ == "__main__":
     
