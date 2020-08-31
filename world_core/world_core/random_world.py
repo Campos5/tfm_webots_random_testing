@@ -13,8 +13,8 @@ class World:
         self.n = n
         self.m = m
         
-        self.n_big = n * 10 
-        self.m_big = m * 10
+        self.n_big = int(n * 10) 
+        self.m_big = int(m * 10)
         
         self.objects = []
         
@@ -41,7 +41,7 @@ class World:
             self.room[i][-1] = 1
             
         # Set as 1 where the robot starts.
-        self.room[self.n_big/2][self.m_big/2] = 1
+        self.room[int(self.n_big/2)][int(self.m_big/2)] = 1
 
 
     def mark_ocuped_space(self, object_to_add, x, y):
@@ -73,8 +73,19 @@ class World:
         object_size_x = int(config.POSSIBLE_OBJECTS[object_to_add]['size']['x'] * 10)
         object_size_y = int(config.POSSIBLE_OBJECTS[object_to_add]['size']['y'] * 10)
 
-        if self.room[x][y] == 1:
-            return False
+        try:
+            if self.room[x][y] == 1:
+                return False
+        except IndexError:
+            print('\n\n\n######################################\n\n')
+            
+            print(x, y)
+            print(self.n_big, self.m_big)
+            print(len(self.room))
+            print(len(self.room[0]))
+            print('----------------------')
+            #print(self.room)
+            raise IndexError
 
         for i in range(object_size_x):
             if x + i < len(self.room):
@@ -133,9 +144,7 @@ class World:
         # Template range map is from -n/2 to n/2 and -m/2 to m/2
         # And world.room is from 0 to n and m * 10
         # So it is necesssary x/10 - n/2 and y/10 - m/2
-        
-        
-        print('En el mapa: ', x/10-self.n/2, y/10-self.m/2)
+
         self.objects.append({
             'furniture': object_to_add,
             'features': 'translation {x} {z} {y}\n {size} \n\t rotation 0 0 0 0'.format(

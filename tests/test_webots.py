@@ -287,8 +287,9 @@ def strategy_grid_room(draw, len_xs=0):
     if not len_xs:
         len_xs = draw(integers(config_test.MIN_NUM_OBJECTS, config_test.MAX_NUM_OBJECTS))
 
-    N = draw(integers(8, 20))
-    M = draw(integers(8, 20))
+    if not N or not M:
+        N = draw(integers(config_test.MIN_MAP_SIZE, config_test.MAX_MAP_SIZE))
+        M = draw(integers(config_test.MIN_MAP_SIZE, config_test.MAX_MAP_SIZE))
     
     num_of_sections = get_num_of_sections(len_xs)
 
