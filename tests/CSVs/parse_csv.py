@@ -20,10 +20,10 @@ for result in glob('{}/*.csv'.format(args.directory)):
     obj = False
     size = False
     
-    if result.split('/')[-1] == 'test_all_random.csv':
+    if result.split('\\')[-1] == 'test_all_random.csv':
         header = 'Funciones'
     else:
-        type_result = result.split('-')[1].split('.')[0]
+        type_result = result.split('/')[-1].split('-')[1].split('.')[0]
         header = 'Objetos' if type_result == '10x10' else 'Tamaño'
         if header == 'Objetos':
             room_size = type_result

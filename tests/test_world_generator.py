@@ -252,6 +252,45 @@ def test_target_1(input_data, pos):
     return True
 
 
+def test_target_1_no_shrink(input_data, pos):
+    global NUM_EXAMPLE
+    global start_time
+    global result_target_1_no_shrink
+    
+    objects_to_add, N, M = input_data
+    
+    if not start_time:
+        start_time = time.time()
+
+    world = World(N, M, config.TEMPLATE_PATH)
+
+    # Target maximizing distance between all point
+    total_distance = 0.0
+    for i, x1, y1 in objects_to_add:
+        for j, x2, y2 in objects_to_add:
+                total_distance +=distance_between_two_points((x1, y1), (x2, y2))
+                
+    target(float(total_distance), label="total_distance")
+
+    for i, x, y in objects_to_add:
+        num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
+        i = int(i * num_possible_objects)
+        x = int(x * N * 10)
+        y = int(y * M * 10)
+        
+        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i]
+        assume(world.check_space(object_to_add, x, y, 0))
+        world.add_element_with_translation(object_to_add, x, y)
+
+    result_target_1_no_shrink[pos].append(time.time() - start_time)
+    NUM_EXAMPLE += 1
+    start_time = None
+
+    return True
+
+
+
+
 def test_target_2(input_data, pos):
     global NUM_EXAMPLE
     global start_time
@@ -283,6 +322,43 @@ def test_target_2(input_data, pos):
         world.add_element_with_translation(object_to_add, x, y)
 
     result_target_2[pos].append(time.time() - start_time)
+    NUM_EXAMPLE += 1
+    start_time = None
+
+    return True
+
+
+def test_target_2_no_shrink(input_data, pos):
+    global NUM_EXAMPLE
+    global start_time
+    global result_target_2_no_shrink
+    
+    objects_to_add, N, M = input_data
+    
+    if not start_time:
+        start_time = time.time()
+
+    world = World(N, M, config.TEMPLATE_PATH)
+
+    # Target maximizing distance between all point
+    total_distance = 0.0
+    for i, x1, y1 in objects_to_add:
+        for j, x2, y2 in objects_to_add:
+                total_distance +=distance_between_two_points((x1, y1), (x2, y2))
+                
+    target(float(total_distance), label="total_distance")
+
+    for i, x, y in objects_to_add:
+        num_possible_objects = len(list(config.POSSIBLE_OBJECTS.keys()))
+        i = int(i * num_possible_objects)
+        x = int(x * N * 10)
+        y = int(y * M * 10)
+        object_to_add = list(config.POSSIBLE_OBJECTS.keys())[i]
+        
+        assume(world.check_space(object_to_add, x, y, 0))
+        world.add_element_with_translation(object_to_add, x, y)
+
+    result_target_2_no_shrink[pos].append(time.time() - start_time)
     NUM_EXAMPLE += 1
     start_time = None
 
@@ -379,7 +455,8 @@ def test_normal_map_generator_10x10_with_15_no_shrink(objects_to_add):
 )
 def test_normal_map_generator_10x10_with_5(objects_to_add):
     input_data = (objects_to_add, 10, 10)
-    assert test_normal(input_data, 0)
+    result =  test_normal(input_data, 0)
+    assert result
 
 
 @given(
@@ -753,6 +830,9 @@ def test_normal_map_generator_20x20_with_10(objects_to_add):
 
 
 
+# TEST TARGET 1
+
+
 @given(
     objects_to_add=lists(lists(floats(0.0, 0.99), min_size=3, max_size=3), min_size=10, max_size=10)
 )
@@ -761,12 +841,9 @@ def test_normal_map_generator_20x20_with_10(objects_to_add):
     max_examples=1000, 
     suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,)
 )
-def test_target_2_map_generator_10x14_with_10(objects_to_add):
+def test_target_1_map_generator_10x14_with_10(objects_to_add):
     input_data = (objects_to_add, 10, 14)
-    assert test_target_2(input_data, 0)
-
-
-# TEST TARGET 1
+    assert test_target_1(input_data, 0)
 
 
 @given(
@@ -812,7 +889,7 @@ def test_target_1_map_generator_15x15_with_10(objects_to_add):
     objects_to_add=lists(lists(floats(0.0, 0.99), min_size=3, max_size=3), min_size=10, max_size=10)
 )
 @settings(
-    deadline=timedelta(milliseconds=config_test.DEADLINE), 
+    deadline=timedelta(milliseconds=10*60*1000), 
     max_examples=1000, 
     suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,)
 )
@@ -1032,6 +1109,21 @@ def test_normal_map_generator_all_random(objects_to_add, N, M):
     max_examples=1000, 
     suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,)
 )
+def test_normal_map_generator_all_random_no_shrink(objects_to_add, N, M):
+    input_data = (objects_to_add, N, M)
+    assert test_normal_no_shrink(input_data, 0)
+
+
+@given(
+    objects_to_add=lists(lists(floats(0.0, 0.99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS),
+    N=integers(config_test.MIN_MAP_SIZE,config_test.MAX_MAP_SIZE),
+    M=integers(config_test.MIN_MAP_SIZE,config_test.MAX_MAP_SIZE)
+)
+@settings(
+    deadline=timedelta(milliseconds=config_test.DEADLINE), 
+    max_examples=1000, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,)
+)
 def test_target_1_map_generator_all_random(objects_to_add, N, M):
     input_data = (objects_to_add, N, M)
     assert test_target_1(input_data, 0)
@@ -1047,9 +1139,41 @@ def test_target_1_map_generator_all_random(objects_to_add, N, M):
     max_examples=1000, 
     suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,)
 )
+def test_target_1_map_generator_all_random_no_shrink(objects_to_add, N, M):
+    input_data = (objects_to_add, N, M)
+    assert test_target_1_no_shrink(input_data, 0)
+
+
+
+@given(
+    objects_to_add=lists(lists(floats(0.0, 0.99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS),
+    N=integers(config_test.MIN_MAP_SIZE,config_test.MAX_MAP_SIZE),
+    M=integers(config_test.MIN_MAP_SIZE,config_test.MAX_MAP_SIZE)
+)
+@settings(
+    deadline=timedelta(milliseconds=config_test.DEADLINE), 
+    max_examples=1000, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,)
+)
 def test_target_2_map_generator_all_random(objects_to_add, N, M):
     input_data = (objects_to_add, N, M)
     assert test_target_2(input_data, 0)
+
+
+@given(
+    objects_to_add=lists(lists(floats(0.0, 0.99), min_size=3, max_size=3), min_size=config_test.MIN_NUM_OBJECTS, max_size=config_test.MAX_NUM_OBJECTS),
+    N=integers(config_test.MIN_MAP_SIZE,config_test.MAX_MAP_SIZE),
+    M=integers(config_test.MIN_MAP_SIZE,config_test.MAX_MAP_SIZE)
+)
+@settings(
+    deadline=timedelta(milliseconds=config_test.DEADLINE), 
+    max_examples=1000, 
+    suppress_health_check=(HealthCheck.filter_too_much, HealthCheck.too_slow,)
+)
+def test_target_2_map_generator_all_random_no_shrink(objects_to_add, N, M):
+    input_data = (objects_to_add, N, M)
+    assert test_target_2_no_shrink(input_data, 0)
+
 
 
 @settings(
@@ -1099,14 +1223,14 @@ def test_10x10(directory):
 
     try:
         test_normal_map_generator_10x10_with_5()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_normal.append(NUM_EXAMPLE)
     NUM_EXAMPLE = 0
     try:
         test_normal_map_generator_10x10_with_7()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_normal.append(NUM_EXAMPLE)
@@ -1114,7 +1238,7 @@ def test_10x10(directory):
     
     try:
         test_normal_map_generator_10x10_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_normal.append(NUM_EXAMPLE)
@@ -1122,7 +1246,7 @@ def test_10x10(directory):
     
     try:
         test_normal_map_generator_10x10_with_12()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_normal.append(NUM_EXAMPLE)
@@ -1130,7 +1254,7 @@ def test_10x10(directory):
     
     try:
         test_normal_map_generator_10x10_with_15()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_normal.append(NUM_EXAMPLE)
@@ -1145,7 +1269,7 @@ def test_10x10(directory):
 
     try:
         test_target_1_10x10_with_5()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_1.append(NUM_EXAMPLE)
@@ -1153,7 +1277,7 @@ def test_10x10(directory):
     
     try:
         test_target_1_10x10_with_7()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_1.append(NUM_EXAMPLE)
@@ -1161,7 +1285,7 @@ def test_10x10(directory):
     
     try:
         test_target_1_10x10_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_1.append(NUM_EXAMPLE)
@@ -1169,7 +1293,7 @@ def test_10x10(directory):
     
     try:
         test_target_1_10x10_with_12()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_1.append(NUM_EXAMPLE)
@@ -1177,7 +1301,7 @@ def test_10x10(directory):
     
     try:
         test_target_1_10x10_with_15()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_1.append(NUM_EXAMPLE)
@@ -1193,7 +1317,7 @@ def test_10x10(directory):
 
     try:
         test_target_2_10x10_with_5()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_2.append(NUM_EXAMPLE)
@@ -1201,7 +1325,7 @@ def test_10x10(directory):
     
     try:
         test_target_2_10x10_with_7()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_2.append(NUM_EXAMPLE)
@@ -1209,7 +1333,7 @@ def test_10x10(directory):
     
     try:
         test_target_2_10x10_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_2.append(NUM_EXAMPLE)
@@ -1217,7 +1341,7 @@ def test_10x10(directory):
     
     try:
         test_target_2_10x10_with_12()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_2.append(NUM_EXAMPLE)
@@ -1225,7 +1349,7 @@ def test_10x10(directory):
     
     try:
         test_target_2_10x10_with_15()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_target_2.append(NUM_EXAMPLE)
@@ -1241,7 +1365,7 @@ def test_10x10(directory):
 
     try:
         test_composite_10x10_with_5()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid.append(NUM_EXAMPLE)
@@ -1249,7 +1373,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_7()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid.append(NUM_EXAMPLE)
@@ -1257,7 +1381,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid.append(NUM_EXAMPLE)
@@ -1265,7 +1389,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_12()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid.append(NUM_EXAMPLE)
@@ -1273,7 +1397,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_15()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid.append(NUM_EXAMPLE)
@@ -1289,7 +1413,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_5_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid_no_shrink.append(NUM_EXAMPLE)
@@ -1297,7 +1421,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_7_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid_no_shrink.append(NUM_EXAMPLE)
@@ -1305,7 +1429,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_10_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid_no_shrink.append(NUM_EXAMPLE)
@@ -1313,7 +1437,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_12_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid_no_shrink.append(NUM_EXAMPLE)
@@ -1321,7 +1445,7 @@ def test_10x10(directory):
     
     try:
         test_composite_10x10_with_15_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     num_examples_grid_no_shrink.append(NUM_EXAMPLE)
@@ -1353,34 +1477,34 @@ def test_10_objects(directory):
 
     try:
         test_normal_map_generator_10x14_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     try:
         test_normal_map_generator_10x17_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_normal_map_generator_10x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_normal_map_generator_15x15_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_normal_map_generator_20x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
@@ -1394,34 +1518,34 @@ def test_10_objects(directory):
 
     try:
         test_target_1_map_generator_10x14_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     try:
         test_target_1_map_generator_10x17_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_target_1_map_generator_10x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_target_1_map_generator_15x15_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_target_1_map_generator_20x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
@@ -1436,34 +1560,34 @@ def test_10_objects(directory):
 
     try:
         test_target_2_map_generator_10x14_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     try:
         test_target_2_map_generator_10x17_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_target_2_map_generator_10x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_target_2_map_generator_15x15_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_target_2_map_generator_20x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
@@ -1477,34 +1601,34 @@ def test_10_objects(directory):
 
     try:
         test_composite_map_generator_10x14_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     try:
         test_composite_map_generator_10x17_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_composite_map_generator_10x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_composite_map_generator_15x15_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_composite_map_generator_20x20_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
@@ -1519,34 +1643,34 @@ def test_10_objects(directory):
 
     try:
         test_composite_map_generator_10x14_with_10_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     try:
         test_composite_map_generator_10x17_with_10_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_composite_map_generator_10x20_with_10_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_composite_map_generator_15x15_with_10_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
     
     try:
         test_composite_map_generator_20x20_with_10_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     NUM_EXAMPLE = 0
@@ -1563,14 +1687,20 @@ def test_10_objects(directory):
 
 def all_random(directory):
     global result_normal
+    global result_normal_no_shrink
     global result_target_1
+    global result_target_1_no_shrink
     global result_target_2
+    global result_target_2_no_shrink
     global result_grid
     global result_grid_no_shrink
 
     result_normal = [[] for i in range(1)]
+    result_normal_no_shrink = [[] for i in range(1)]
     result_target_1 = [[] for i in range(1)]
+    result_target_1_no_shrink = [[] for i in range(1)]
     result_target_2 = [[] for i in range(1)]
+    result_target_2_no_shrink = [[] for i in range(1)]
     result_grid = [[] for i in range(1)]
     result_grid_no_shrink = [[] for i in range(1)]
     
@@ -1581,46 +1711,87 @@ def all_random(directory):
     try:
         test_normal_map_generator_all_random()
         result_all_random.append(result_normal[0])
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
+    
+    print('Execution time test all random', time.time() - init_time)
     print('Next')
+    init_time = time.time()
+
+    try:
+        test_normal_map_generator_all_random_no_shrink()
+        result_all_random.append(result_normal_no_shrink[0])
+    except (AssertionError,Unsatisfiable):
+        pass
+    
+    print('Execution time test all random', time.time() - init_time)
+    print('Next')
+    init_time = time.time()
     
     try:
-        test_target_2_map_generator_all_random()
+        test_target_1_map_generator_all_random()
         result_all_random.append(result_target_1[0])
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
+    
+    print('Execution time test all random', time.time() - init_time)
     print('Next')
+    init_time = time.time()
+    
+    try:
+        test_target_1_map_generator_all_random_no_shrink()
+        result_all_random.append(result_target_1_no_shrink[0])
+    except (AssertionError,Unsatisfiable):
+        pass
+    
+    print('Execution time test all random', time.time() - init_time)
+    print('Next')
+    init_time = time.time()
     
     try:
         test_target_2_map_generator_all_random()
         result_all_random.append(result_target_2[0])
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
+    
+    print('Execution time test all random', time.time() - init_time)
     print('Next')
+    init_time = time.time()
+    
+    try:
+        test_target_2_map_generator_all_random_no_shrink()
+        result_all_random.append(result_target_2_no_shrink[0])
+    except (AssertionError,Unsatisfiable):
+        pass
+    
+    print('Execution time test all random', time.time() - init_time)
+    print('Next')
+    init_time = time.time()
     
     try:
         test_composite_map_generator_all_random()
         result_all_random.append(result_grid[0])
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
+
+    print('Execution time test all random', time.time() - init_time)
     print('Next')
-    
+    init_time = time.time()
+
     try:
         test_composite_map_generator_no_shrink_all_random()
         result_all_random.append(result_grid_no_shrink[0])
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     
-    print('Next')
-
-    functions = ['Test normal', 'Test dirigido 1', 'Test dirigido 2', 'Test compuesto', 'Test compuesto sin reducción']
+    print('Execution time test all random', time.time() - init_time)
+    
+    functions = ['Test normal', 'Test normal sin reduccion','Test dirigido 1', 'Test dirigido 1 sin reducción', 'Test dirigido 2', 'Test dirigido 2 sin reducción','Test compuesto', 'Test compuesto sin reducción']
     with open(os.path.join(directory, 'test_all_random.csv'), 'w') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         for row, i in zip(result_all_random, functions):
             wr.writerow(['Función: {}'.format(i)] + ['Num_examples: {}'.format(len(row))] + row)
-    
-    print('Execution time test all random', time.time() - init_time)
+
 
 
 def shrink_vs_no_shrink(directory):
@@ -1635,30 +1806,30 @@ def shrink_vs_no_shrink(directory):
 
     try:
         test_normal_map_generator_10x10_with_5()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     try:
         test_normal_map_generator_10x10_with_7()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
     try:
         test_normal_map_generator_10x10_with_10()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
     try:
         test_normal_map_generator_10x10_with_12()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
     try:
         test_normal_map_generator_10x10_with_15()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
@@ -1671,30 +1842,30 @@ def shrink_vs_no_shrink(directory):
 
     try:
         test_normal_map_generator_10x10_with_5_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     try:
         test_normal_map_generator_10x10_with_7_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
     try:
         test_normal_map_generator_10x10_with_10_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
     try:
         test_normal_map_generator_10x10_with_12_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
     try:
         test_normal_map_generator_10x10_with_15_no_shrink()
-    except Unsatisfiable:
+    except (AssertionError,Unsatisfiable):
         pass
     print('Next')
     
@@ -1717,9 +1888,7 @@ if __name__ == "__main__":
     
     test_shrink = args.test
     
-    shrink_vs_no_shrink(args.directory)
-    exit()
-
+    #shrink_vs_no_shrink(args.directory)
     test_10x10(args.directory)
     test_10_objects(args.directory)
     all_random(args.directory)
